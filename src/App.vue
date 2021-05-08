@@ -1,25 +1,29 @@
 <template>
 <div class="container">
   <Header @toggle-add-task="toggleButton" title="Task Tracker" :showAddTask="showAddTask"/>
-  <div v-if="showAddTask">
+    <div v-if="showAddTask">
   <AddTask @add-task="addTask" />
   </div>
-
   <Tasks @toggle-reminder="toggleReminder" @delete-task="deleteTask" :tasks="tasks"/>
+  <router-view></router-view>
+  <Footer />
 </div>
 </template>
 
 <script>
-import Header from './components/Header.vue';
+import Header from './components/Header.vue'
+import Footer from './components/Footer.vue';
 import Tasks from './components/Tasks.vue';
 import AddTask from './components/AddTask.vue';
+
 
 export default {
   name: 'App',
   components: {
     Header,
     Tasks,
-    AddTask
+    AddTask,
+    Footer
   },
   data(){
     return{
@@ -28,31 +32,54 @@ export default {
     }
   },
   methods:{
-    addTask(task){
+    async addTask(task){
       // this.tasks.push(newTask)
-      this.tasks = [...this.tasks,task]
-    },
-    deleteTask(id){
-      if(confirm('Are you Sure?')){
+      const res = await fetch('http://localhost:3000/tasks',{
+        method:'POST',
+        headers:{
+          'Content-type':'application/json',
+        },
+        body:JSON.stringify(task)
+      })
+      const data = await res.json()
 
-        this.tasks = this.tasks.filter((task) => task.id !== id)
+      this.tasks = [...this.tasks,data]
+    },
+    async deleteTask(id){
+      if(confirm('Are you Sure?')){
+        const res = await fetch(`http://localhost:3000/tasks/${id}`,{
+          method:'DELETE'
+        })
+        res.status === 200 ? (this.tasks = this.tasks.filter((task) => task.id !== id)) : alert('Error Deleting task')
       }
     },
-    toggleReminder(id){
-      this.tasks = this.tasks.map((task) => task.id === id ? {...task,reminder:!task.reminder}:task)
+   async  toggleReminder(id){
+     const taskToToggle = await this.fetchTask(id)
+     const updTask = {...taskToToggle,reminder:!taskToToggle.reminder}
+     const res = await fetch(`http://localhost:3000/tasks/${id}`,{
+       method:'PUT',
+       headers:{
+         'Content-type':'application/json'
+       },
+       body:JSON.stringify(updTask)
+     })
+
+      const data = await res.json()
+
+      this.tasks = this.tasks.map((task) => task.id === id ? {...task,reminder:data.reminder}:task)
     },
     toggleButton(){
       this.showAddTask = !this.showAddTask
     },
     async fetchTasks(){
-      const res = await fetch('api/tasks')
+      const res = await fetch('http://localhost:3000/tasks')
       const data = await res.json()
 
       return data
     }
     ,
-    async fetchTask(){
-      const res = await fetch(`api/tasks/${id}`)
+    async fetchTask(id){
+      const res = await fetch(`http://localhost:3000/tasks/${id}`)
       const data = await res.json()
 
       return data

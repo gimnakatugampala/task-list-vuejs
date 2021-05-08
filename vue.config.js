@@ -5,8 +5,8 @@ module.export = {
                 target:'http://localhost:3000',
                 changeOrigin:true,
                 loglevel:'debug',
-                pathRewrite:{'^api':'/'}
-            }
+                pathRewrite:{'^api':'/'},
+            },
         }
     }
 }
